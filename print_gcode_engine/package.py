@@ -1,9 +1,13 @@
 import json
 import re
+import os
+import shutil
+import tempfile
+from pathlib import Path
 import xml.etree.ElementTree as ET
 from decimal import Decimal, localcontext
 from zipfile import ZipFile
-from .scanner import scan, plain
+from .scanner import scan, plain, NATIVE_SCANNER
 
 def analyze_package(path,progress=None,cancelled=None):
     with ZipFile(path) as archive, localcontext() as ctx:
@@ -23,8 +27,37 @@ def analyze_package(path,progress=None,cancelled=None):
         if xml and (b'<!DOCTYPE' in xml.upper() or b'<!ENTITY' in xml.upper()):raise ValueError('UNSAFE_XML_METADATA')
         root=ET.fromstring(xml) if xml else None
         results=[]
-        for info in gcodes:
-            with archive.open(info) as stream:result=scan(stream,info.file_size,progress,cancelled)
+        for plate_index,info in enumerate(gcodes):
+            def plate_progress(value):
+                if progress:progress({**value,'eta_context':info.filename,
+                    'eta_final_phase':value.get('eta_final_phase',value.get('phase') not in ('CHECKPOINT','EXTRACT')) and plate_index==len(gcodes)-1})
+            workers=max(1,min(8,int(os.getenv('GCODE_PARALLEL_WORKERS','1'))))
+            scratch=os.getenv('GCODE_SCRATCH_DIR')
+            if workers>1 and scratch and info.file_size>=8*1024*1024:
+                from .parallel import benefits_from_parallel
+                with archive.open(info) as stream:sample=stream.read(4*1024*1024)
+                if not benefits_from_parallel(sample,size_bytes=info.file_size,native=NATIVE_SCANNER):scratch=None
+            if scratch and workers>1 and info.file_size>=8*1024*1024:
+                Path(scratch).mkdir(parents=True,exist_ok=True)
+                if shutil.disk_usage(scratch).free<info.file_size+64*1024*1024:scratch=None
+            else:scratch=None
+            if scratch:
+                from .parallel import analyze_parallel_file
+                with tempfile.TemporaryDirectory(prefix='gcode-',dir=scratch) as directory:
+                    extracted=Path(directory)/'plate.gcode';written=0
+                    with archive.open(info) as stream,extracted.open('wb') as output:
+                        while True:
+                            if cancelled and cancelled():raise RuntimeError('ANALYSIS_CANCELLED')
+                            block=stream.read(1024*1024)
+                            if not block:break
+                            output.write(block);written+=len(block)
+                            plate_progress({'bytes_processed':int(written*.1),'total_bytes':info.file_size,'lines':0,'phase':'EXTRACT',
+                                'phase_bytes_processed':written,'phase_total_bytes':info.file_size,'eta_final_phase':False})
+                    def mapped(value):
+                        plate_progress({**value,'bytes_processed':int(info.file_size*.1+value['bytes_processed']*.9)})
+                    result=analyze_parallel_file(extracted,mapped,cancelled,workers)
+            else:
+                with archive.open(info) as stream:result=scan(stream,info.file_size,plate_progress if progress else None,cancelled)
             match=re.search(r'plate_(\d+)\.gcode$',info.filename,re.I);plate_id=match[1] if match else None
             result.update({'plate_id':plate_id,'archive_member':info.filename,'uncompressed_bytes':info.file_size})
             plate=None
@@ -54,7 +87,7 @@ def analyze_package(path,progress=None,cancelled=None):
             if settings:
                 model=' '.join(str(settings.get(k,'')) for k in ('printer_model','printer_settings_id','printer_variant'))
                 lower=model.lower()
-                for key,name in [('H2C','h2c'),('H2D','h2d'),('A1_MINI','a1 mini'),('A1','a1'),('X1E','x1e'),('X1C','x1 carbon'),('P1S','p1s'),('P1P','p1p'),('P2S','p2s'),('Q2','q2'),('Q1','q1'),('X_MAX3','x max 3'),('X_PLUS3','x plus 3'),('K1_MAX','k1 max'),('K1C','k1c'),('K1','k1'),('K2_PLUS','k2 plus'),('K2','k2'),('MK4S','mk4s'),('MK4','mk4'),('MK3S_PLUS','mk3s'),('XL','prusa xl'),('MINI_PLUS','mini+')]:
+                for key,name in [('VORON_2_4','voron 2.4'),('H2C','h2c'),('H2D','h2d'),('A1_MINI','a1 mini'),('A1','a1'),('X1E','x1e'),('X1C','x1 carbon'),('P1S','p1s'),('P1P','p1p'),('P2S','p2s'),('Q2','q2'),('Q1','q1'),('X_MAX3','x max 3'),('X_PLUS3','x plus 3'),('K1_MAX','k1 max'),('K1C','k1c'),('K1','k1'),('K2_PLUS','k2 plus'),('K2','k2'),('MK4S','mk4s'),('MK4','mk4'),('MK3S_PLUS','mk3s'),('XL','prusa xl'),('MINI_PLUS','mini+')]:
                     if name in lower: result['printer']=key;break
                 nozzles=settings.get('nozzle_diameter',[])
                 if isinstance(nozzles,list) and nozzles:result['nozzle_diameter_mm']=str(nozzles[0])
