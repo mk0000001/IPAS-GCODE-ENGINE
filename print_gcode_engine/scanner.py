@@ -236,11 +236,11 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
                     else:section_profile_limited=True
                 for axis in 'XYZ':
                     bound=bounds[axis];end=xyz[axis];start=before[axis]
-                    if bound[0] is None:bound[0]=end
+                    if bound[0] is None:bound[0]=min(start,end)
                     else:
                         if end<bound[0]:bound[0]=end
                         if start<bound[0]:bound[0]=start
-                    if bound[1] is None:bound[1]=end
+                    if bound[1] is None:bound[1]=max(start,end)
                     else:
                         if end>bound[1]:bound[1]=end
                         if start>bound[1]:bound[1]=start
