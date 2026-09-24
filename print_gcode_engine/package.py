@@ -3,6 +3,7 @@ import re
 import os
 import shutil
 import tempfile
+from io import BufferedReader
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from decimal import Decimal, localcontext
@@ -57,7 +58,10 @@ def analyze_package(path,progress=None,cancelled=None):
                         plate_progress({**value,'bytes_processed':int(info.file_size*.1+value['bytes_processed']*.9)})
                     result=analyze_parallel_file(extracted,mapped,cancelled,workers)
             else:
-                with archive.open(info) as stream:result=scan(stream,info.file_size,plate_progress if progress else None,cancelled)
+                # ZipExtFile.readline otherwise performs Python-level ZIP reads
+                # for every short motion line. Keep a bounded decompressed buffer.
+                with archive.open(info) as source, BufferedReader(source,1024*1024) as stream:
+                    result=scan(stream,info.file_size,plate_progress if progress else None,cancelled)
             match=re.search(r'plate_(\d+)\.gcode$',info.filename,re.I);plate_id=match[1] if match else None
             result.update({'plate_id':plate_id,'archive_member':info.filename,'uncompressed_bytes':info.file_size})
             plate=None
