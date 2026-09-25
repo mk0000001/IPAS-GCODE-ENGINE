@@ -1,5 +1,7 @@
 # Print G-code Engine
 
+Strength-context parsing retains filament flow/extrusion multipliers, top/bottom shell counts, minimum-layer-time and fan settings from G-code or 3MF metadata. These are slicer settings; they do not measure local thermal return time, porosity or bonded contact area.
+
 The modal checkpoint pass defers absolute XYZ and feed conversion until a chunk boundary or a relative-coordinate, origin-reset, or unit-change command needs numeric state. Superseded absolute positions are not repeatedly converted. Decimal50 state precision, relative movement, unit scaling, tool state and retraction debt remain exact; there is no reduced-precision fast path. Checkpoint states are regression-tested against complete prefix scans for2/4/6 partitions.
 
 `scan(..., motion_callback=callback)` optionally streams visual motions as `(layer_number, before_xyz, after_xyz, feature, tool, deposited_mm, arc)`. The callback shares the analyzer's modal coordinates and retraction accounting; copy coordinates if retaining them beyond the call. Arc geometry is included only for observers. Stationary unretraction does not create a model-layer area entry, including tiny residual extrusion before a support feature change.

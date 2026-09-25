@@ -39,6 +39,7 @@ class H2CMetadataTests(unittest.TestCase):
                 archive.writestr('Metadata/project_settings.config', json.dumps({
                     'printer_model': 'Bambu Lab H2C', 'nozzle_diameter': ['0.4', '0.4'],
                     'physical_extruder_map': ['1', '0'], 'filament_map_mode': 'Auto For Flush',
+                    'filament_flow_ratio':['1.0','1.1'],'slow_down_layer_time':'8','top_shell_layers':'4',
                     'has_filament_switcher': '1'}))
             result = analyze(path)
         self.assertEqual(result['duration_seconds'], 55697)
@@ -48,6 +49,9 @@ class H2CMetadataTests(unittest.TestCase):
         self.assertEqual(result['printer'], 'H2C')
         self.assertEqual(result['multicolor_system'], 'VORTEK')
         self.assertEqual(result['configuration']['physical_extruder_map'], ['1', '0'])
+        self.assertEqual(result['configuration']['filament_flow_ratio'], ['1.0','1.1'])
+        self.assertEqual(result['configuration']['slow_down_layer_time'], '8')
+        self.assertEqual(result['configuration']['top_shell_layers'], '4')
 
 
 if __name__ == '__main__':

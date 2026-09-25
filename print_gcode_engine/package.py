@@ -98,7 +98,7 @@ def analyze_package(path,progress=None,cancelled=None):
                 profiles=settings.get('filament_settings_id',[])
                 for u in result['material_usage']:
                     if isinstance(profiles,list) and u['tool_id']<len(profiles):u['sku_profile']=profiles[u['tool_id']]
-                for key in ('outer_wall_line_width','external_perimeter_extrusion_width','line_width','extrusion_width','layer_height','wall_loops','sparse_infill_density','sparse_infill_pattern','nozzle_temperature','nozzle_temperature_initial_layer','bed_temperature','chamber_temperature','filament_density','filament_is_mixed','filament_mixed_components','filament_map_mode','single_extruder_multi_material','physical_extruder_map','extruder_type','extruder_variant_list','has_filament_switcher'):
+                for key in ('filament_flow_ratio','extrusion_multiplier','top_shell_layers','bottom_shell_layers','top_solid_layers','bottom_solid_layers','slow_down_layer_time','min_layer_time','fan_speed','fan_speed_percent','outer_wall_line_width','external_perimeter_extrusion_width','line_width','extrusion_width','layer_height','wall_loops','sparse_infill_density','sparse_infill_pattern','nozzle_temperature','nozzle_temperature_initial_layer','bed_temperature','chamber_temperature','filament_density','filament_is_mixed','filament_mixed_components','filament_map_mode','single_extruder_multi_material','physical_extruder_map','extruder_type','extruder_variant_list','has_filament_switcher'):
                     if key in settings and key not in result['configuration']:result['configuration'][key]=settings[key]
                 mixed=settings.get('filament_is_mixed',[])
                 active_ids={int(u['tool_id']) for u in result.get('material_usage',[])}
