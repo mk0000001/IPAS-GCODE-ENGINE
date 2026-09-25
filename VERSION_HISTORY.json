@@ -1,0 +1,105 @@
+{
+  "counting_rule": "Reachable non-merge commits modifying the engine package, excluding _version.py; initial import counts as revision 1. Docs, tests-only and host-app changes excluded. Not individual feature counts.",
+  "version": "0.24.0",
+  "revision_count": 24,
+  "update_count": 23,
+  "source_commit": "898b9ca9a1c3cd3ff6465b4eb9368d36af5a599f",
+  "commits": [
+    {
+      "commit": "49a29f0d366e35b8b2cc861cbea3089313d83837",
+      "subject": "Extract streaming G-code and sliced 3MF analyzer"
+    },
+    {
+      "commit": "951129646b4edab5d6cf18e39a7a0e69aacb58b1",
+      "subject": "Expose bounded per-layer model deposition volume"
+    },
+    {
+      "commit": "865c973b4e62eedb54c394d79be5e9d95cee2324",
+      "subject": "Separate Voron toolchanger from MMU detection"
+    },
+    {
+      "commit": "bfa2d48bc7ea1895d6d5b72ea0a9583903b4d864",
+      "subject": "Handle empty model and support paths in risk profile"
+    },
+    {
+      "commit": "3f394c6b1a1fd98ce0b428d3da92f00b4b35b7e8",
+      "subject": "Precompile scanner header patterns for repeated line parsing"
+    },
+    {
+      "commit": "bcb42afeb2dbde175247a4c8ad712283df1aba1b",
+      "subject": "Classify support bridge overhang and footprint indicators"
+    },
+    {
+      "commit": "d01111308cc6c2389eead71fb013125d611f2b01",
+      "subject": "Skip exact repeated no-op absolute moves"
+    },
+    {
+      "commit": "022815f79fef19b19e3c61352d88debfb2a8394a",
+      "subject": "Expose explicit modal checkpoint state for deterministic segments"
+    },
+    {
+      "commit": "3596a7120a80ea55aed95833345946359c548966",
+      "subject": "Add bounded layer-aligned modal checkpoint prepass"
+    },
+    {
+      "commit": "8593f008405f06c69b66b6e95bc174782aa2df1c",
+      "subject": "Merge process histograms and support Bambu layer checkpoints"
+    },
+    {
+      "commit": "bce8aa0ecfb76d57b354c2a1415d764cd5951ba3",
+      "subject": "Add opt-in cancellable parallel scanning and ordered result merge"
+    },
+    {
+      "commit": "35d288157bf6f8f32f6a9b4e5ec313fe48cfaaf5",
+      "subject": "Select arc-heavy parallel workloads using measured VM behavior"
+    },
+    {
+      "commit": "cdae87e87876b630366052e013631e3a8ce83978",
+      "subject": "Preserve layer marker ordinals through parallel analysis"
+    },
+    {
+      "commit": "416bf85452f8db45a691aff533448ad366f1e71a",
+      "subject": "Compile large-file analysis and report progress by time"
+    },
+    {
+      "commit": "1bc38b641919edeef90caed5101535d9a1d25084",
+      "subject": "Expose phase work units for analysis time estimates"
+    },
+    {
+      "commit": "8056a5b4af3998406bc7897cab52dd0be53c5423",
+      "subject": "Stream viewer motions and exclude stationary priming from model layers"
+    },
+    {
+      "commit": "8b5e8c42ac49df3e726d0d99a1201c59dc17fbbe",
+      "subject": "Defer superseded absolute coordinate conversions in checkpoint scans"
+    },
+    {
+      "commit": "85aca93e8474a744a132c45ff4e69bec808f631a",
+      "subject": "Recover layer volume profile when filament diameter is declared after extrusion"
+    },
+    {
+      "commit": "9f913d242cf2c45bd8757529274e1eb8361e813f",
+      "subject": "Preserve parallel G-code state and H2C multicolor metadata"
+    },
+    {
+      "commit": "9a55013a0eb8e29539fcc79c71221f9051abd651",
+      "subject": "Fix reviewed geometry and calculation regressions"
+    },
+    {
+      "commit": "6a8d0ccf3fa3a50758350f7d19539fe22021491a",
+      "subject": "Buffer embedded G-code reads without changing scan results"
+    },
+    {
+      "commit": "2c219f7fcae7f14bec5d0359db274044669bf975",
+      "subject": "Preserve configured extrusion widths for section assessment"
+    },
+    {
+      "commit": "a51183d00b7522406240a1f57500769e3cf9a87e",
+      "subject": "Preserve flow shell and cooling settings for strength evidence"
+    },
+    {
+      "commit": "898b9ca9a1c3cd3ff6465b4eb9368d36af5a599f",
+      "subject": "Reduce redundant parsing in modal checkpoints"
+    }
+  ]
+}

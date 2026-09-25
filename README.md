@@ -1,5 +1,10 @@
 # Print G-code Engine
 
+Release: **v0.24.0** · 24 recorded code revisions (23 updates after initial import). [Commit ledger](VERSION_HISTORY.json).
+
+Count includes reachable non-merge commits touching the engine package, including merged development history; excludes documentation-only, tests-only, host-app changes and generated _version.py. It counts commits, not individual features or validated accuracy. Version convention: 0.<code revision count>.<release metadata fix>. Past results without a recorded version remain unknown.
+
+
 The checkpoint pass skips immediately repeated absolute G0/G1 motions with the same guard as the scanner, recognizes common whitespace-delimited motion commands without a regex, and caches the last exact extrusion literal. Unit multiplication and ordered Decimal arithmetic remain unchanged; the cache is bounded to one value. Compact commands and subcodes retain the regex path. Relative motion and extrusion are never skipped.
 
 Strength-context parsing retains filament flow/extrusion multipliers, top/bottom shell counts, minimum-layer-time and fan settings from G-code or 3MF metadata. These are slicer settings; they do not measure local thermal return time, porosity or bonded contact area.
