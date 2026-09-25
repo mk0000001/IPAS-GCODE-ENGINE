@@ -37,6 +37,8 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
     plane='G17';absolute_center=False;config={};feature=None;stealth_start=False
     feed=0.0;diameters=[];setpoints={'nozzle':None,'bed':None,'chamber':None}
     pending_xyz={};pending_feed=None
+    last_e_text=None;last_e_number=zero
+    last_absolute_motion=None
     line_width=None;layer_height=None
     cuts=[0];states=[]
     lines=0;next_check=0;layer_number=0
@@ -75,6 +77,10 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
             lines+=1
             if len(binary)>1024*1024:raise ValueError('GCODE_LINE_TOO_LONG')
             if b'\x00' in binary:raise ValueError('BINARY_GCODE_NOT_SUPPORTED')
+            # Same guard as scan(): an immediately repeated absolute linear move
+            # cannot change modal state. Keep byte/line counts and checks above.
+            if absolute_xyz and absolute_e and binary==last_absolute_motion:continue
+            last_absolute_motion=None
             text=binary.decode('utf-8','replace').strip()
             if text.startswith(';'):
                 if len(cuts)<workers and position>=size*len(cuts)/workers and LAYER_MARKER.match(text):
@@ -106,9 +112,14 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
                 continue
             command=text.split(';',1)[0].strip().upper()
             if command.startswith('N'):command=LINE_NUMBER.sub('',command)
-            match=COMMAND.match(command)
-            if not match:continue
-            code=match[1]
+            # Match scan()'s common-command path; compact forms and subcodes
+            # retain the original parser rather than sharing a G1 prefix.
+            if len(command)>2 and command[:2] in MOTION_CODES and command[2].isspace():
+                code=command[:2]
+            else:
+                match=COMMAND.match(command)
+                if not match:continue
+                code=match[1]
             if code=='G90':absolute_xyz=True
             elif code=='G91':flush_pending();absolute_xyz=False
             elif code=='M82':absolute_e=True
@@ -137,7 +148,12 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
                 fields=dict(FIELDS.findall(command))
                 if 'F' in fields:pending_feed=fields['F']
                 if 'E' in fields:
-                    value=Decimal(fields['E'])*scale
+                    e_text=fields['E']
+                    if e_text!=last_e_text:
+                        last_e_number=Decimal(e_text);last_e_text=e_text
+                    # Cache only the exact literal, never the rounded product.
+                    # Unit scaling and all per-move arithmetic retain their order.
+                    value=last_e_number*scale
                     delta=value-epos[tool] if absolute_e else value
                     epos[tool]=value if absolute_e else epos[tool]+value
                     if delta<0:retract[tool]=retract.get(tool,zero)-delta
@@ -149,6 +165,8 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
                     if axis in fields:
                         if absolute_xyz:pending_xyz[axis]=fields[axis]
                         else:xyz[axis]+=Decimal(fields[axis])*scale
+                if code in ('G0','G1') and absolute_xyz and absolute_e:
+                    last_absolute_motion=binary
     if len(cuts)<2:return None
     cuts.append(size)
     return [(cuts[i],cuts[i+1],states[i]) for i in range(len(states))]

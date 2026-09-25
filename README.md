@@ -1,5 +1,7 @@
 # Print G-code Engine
 
+The checkpoint pass skips immediately repeated absolute G0/G1 motions with the same guard as the scanner, recognizes common whitespace-delimited motion commands without a regex, and caches the last exact extrusion literal. Unit multiplication and ordered Decimal arithmetic remain unchanged; the cache is bounded to one value. Compact commands and subcodes retain the regex path. Relative motion and extrusion are never skipped.
+
 Strength-context parsing retains filament flow/extrusion multipliers, top/bottom shell counts, minimum-layer-time and fan settings from G-code or 3MF metadata. These are slicer settings; they do not measure local thermal return time, porosity or bonded contact area.
 
 The modal checkpoint pass defers absolute XYZ and feed conversion until a chunk boundary or a relative-coordinate, origin-reset, or unit-change command needs numeric state. Superseded absolute positions are not repeatedly converted. Decimal50 state precision, relative movement, unit scaling, tool state and retraction debt remain exact; there is no reduced-precision fast path. Checkpoint states are regression-tested against complete prefix scans for2/4/6 partitions.
