@@ -7,9 +7,44 @@ from zipfile import ZipFile
 
 from print_gcode_engine.analyzer import analyze
 from print_gcode_engine.scanner import scan
+from print_gcode_engine.package import normalize_thermal_configuration
 
 
 class H2CMetadataTests(unittest.TestCase):
+    def test_ratos_literal_bed_parameter_only(self):
+        data=b'START_PRINT INITIAL_TOOL=0 BED_TEMP=65\nM83\nG1 X1 E1 F600\nM140 S0\n'
+        result=scan(io.BytesIO(data),len(data))
+        self.assertEqual(result['configuration']['bed_temperature'],'65')
+        self.assertEqual(result['process_metrics']['bed_setpoint_c']['max'],65)
+        for value in ('{bed_temperature}','-1','999','65oops'):
+            data=('START_PRINT BED_TEMP='+value+'\n').encode()
+            result=scan(io.BytesIO(data),len(data))
+            self.assertNotIn('bed_temperature',result['configuration'])
+
+    def test_unknown_plate_does_not_guess_and_explicit_values_win(self):
+        result={'configuration':{},'metric_sources':{}}
+        normalize_thermal_configuration(result,{'curr_bed_type':'Unknown Plate','hot_plate_temp':['120']})
+        self.assertNotIn('bed_temperature',result['configuration'])
+        result['configuration']['bed_temperature']='80'
+        normalize_thermal_configuration(result,{'curr_bed_type':'Textured PEI Plate','textured_plate_temp':['110']})
+        self.assertEqual(result['configuration']['bed_temperature'],'80')
+
+    def test_selected_bed_and_chamber_settings_are_normalized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'thermal.3mf'
+            with ZipFile(path, 'w') as archive:
+                archive.writestr('Metadata/plate_1.gcode', 'M140 S110\nM190 S110\nM141 S65\nM140 S0\n')
+                archive.writestr('Metadata/project_settings.config', json.dumps({
+                    'printer_model':'Bambu Lab H2C', 'curr_bed_type':'Textured PEI Plate',
+                    'textured_plate_temp':['110'], 'textured_plate_temp_initial_layer':['115'],
+                    'cool_plate_temp':['100'], 'chamber_temperatures':['65']}))
+            result = analyze(path)
+        self.assertEqual(result['configuration']['bed_temperature'], ['110'])
+        self.assertEqual(result['configuration']['bed_temperature_initial_layer'], ['115'])
+        self.assertEqual(result['configuration']['chamber_temperature'], ['65'])
+        self.assertEqual(result['configuration']['curr_bed_type'], 'Textured PEI Plate')
+        self.assertEqual(result['metric_sources']['bed_temperature'], '3MF_SELECTED_BUILD_PLATE_CONFIGURATION')
+
     def test_raw_gcode_retains_multicolor_settings(self):
         for setting in ('filament_map_mode = Auto For Flush', 'single_extruder_multi_material = 1'):
             with self.subTest(setting=setting):

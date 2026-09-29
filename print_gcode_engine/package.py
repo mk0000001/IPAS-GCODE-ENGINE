@@ -10,6 +10,29 @@ from decimal import Decimal, localcontext
 from zipfile import ZipFile
 from .scanner import scan, plain, NATIVE_SCANNER
 
+def normalize_thermal_configuration(result, settings):
+    """Retain the selected Bambu plate profile, not an unrelated plate's heat."""
+    config=result['configuration']; sources=result['metric_sources']
+    bed_type=settings.get('curr_bed_type')
+    if bed_type:
+        config.setdefault('curr_bed_type',bed_type)
+    prefix={
+        'Textured PEI Plate':'textured_plate_temp',
+        'High Temp Plate':'hot_plate_temp',
+        'Smooth PEI Plate':'hot_plate_temp',
+        'Engineering Plate':'eng_plate_temp',
+        'Cool Plate':'cool_plate_temp',
+        'Bambu Cool Plate SuperTack':'supertack_plate_temp',
+    }.get(bed_type)
+    if prefix:
+        for target,key in (('bed_temperature',prefix),('bed_temperature_initial_layer',prefix+'_initial_layer')):
+            if target not in config and settings.get(key) not in (None,'',[]):
+                config[target]=settings[key]
+                sources[target]='3MF_SELECTED_BUILD_PLATE_CONFIGURATION'
+    if 'chamber_temperature' not in config and settings.get('chamber_temperatures') not in (None,'',[]):
+        config['chamber_temperature']=settings['chamber_temperatures']
+        sources['chamber_temperature']='3MF_CHAMBER_CONFIGURATION'
+
 def analyze_package(path,progress=None,cancelled=None):
     with ZipFile(path) as archive, localcontext() as ctx:
         ctx.prec=50
@@ -101,6 +124,7 @@ def analyze_package(path,progress=None,cancelled=None):
                 for key in ('filament_flow_ratio','extrusion_multiplier','top_shell_layers','bottom_shell_layers','top_solid_layers','bottom_solid_layers','slow_down_layer_time','min_layer_time','fan_speed','fan_speed_percent','outer_wall_line_width','external_perimeter_extrusion_width','line_width','extrusion_width','layer_height','wall_loops','sparse_infill_density','sparse_infill_pattern','nozzle_temperature','nozzle_temperature_initial_layer','bed_temperature','chamber_temperature','filament_density','filament_is_mixed','filament_mixed_components','filament_map_mode','single_extruder_multi_material','physical_extruder_map','extruder_type','extruder_variant_list','has_filament_switcher'):
                     if key in settings and key not in result['configuration']:result['configuration'][key]=settings[key]
                 mixed=settings.get('filament_is_mixed',[])
+                normalize_thermal_configuration(result,settings)
                 active_ids={int(u['tool_id']) for u in result.get('material_usage',[])}
                 result['full_spectrum_detected']=bool(any(i<len(mixed) and str(mixed[i]).lower() in ('true','1') for i in active_ids))
                 result['multicolor_system']='VORTEK' if result.get('printer') in ('H2C','H2D') and (str(settings.get('single_extruder_multi_material','')) in ('1','true') or 'auto' in str(settings.get('filament_map_mode','')).lower()) else None

@@ -112,6 +112,11 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
                 continue
             command=text.split(';',1)[0].strip().upper()
             if command.startswith('N'):command=LINE_NUMBER.sub('',command)
+            if command.startswith('START_PRINT '):
+                bed=re.search(r'(?:^|\s)BED_TEMP=([0-9]+(?:\.[0-9]+)?)(?=\s|$)',command)
+                if bed and 0<=float(bed[1])<=150:
+                    setpoints['bed']=float(bed[1]);config['bed_temperature']=bed[1]
+                continue
             # Match scan()'s common-command path; compact forms and subcodes
             # retain the original parser rather than sharing a G1 prefix.
             if len(command)>2 and command[:2] in MOTION_CODES and command[2].isspace():

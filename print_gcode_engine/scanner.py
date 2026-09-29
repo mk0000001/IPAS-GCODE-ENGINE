@@ -26,6 +26,7 @@ TIME_VALUE=re.compile(r':\s*(\d+)')
 SETPOINT=re.compile(r'[SR]\s*('+NUMBER+r')')
 MASS_NUMBER=re.compile(NUMBER)
 PRINTER_ALIASES=(
+    ('RATRIG_VCORE4_IDEX_400','ratrig v-core 4 idex 400'),('RATRIG_VCORE4_IDEX_400','rat rig v-core 4 idex 400'),
     ('VORON_2_4','voron 2.4'),('VORON_2_4','voron2.4'),('STEALTH','stealthchanger'),
     ('H2C','h2c'),('H2D','h2d'),('A1_MINI','a1 mini'),('A1','a1'),
     ('X1E','x1e'),('X1C','x1 carbon'),('P1S','p1s'),('P1P','p1p'),
@@ -156,6 +157,12 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             continue
         command=text.split(';',1)[0].strip().upper()
         if command.startswith('N'):command=LINE_NUMBER.sub('',command)
+        if command.startswith('START_PRINT '):
+            bed=re.search(r'(?:^|\s)BED_TEMP=([0-9]+(?:\.[0-9]+)?)(?=\s|$)',command)
+            if bed and 0<=float(bed[1])<=150:
+                process.setpoint('bed',float(bed[1]))
+                config['bed_temperature']=bed[1]
+            continue
         # Most slicer lines are whitespace-delimited motion commands.
         # Keep the regex fallback for compact commands, subcodes and checksums.
         if len(command)>2 and command[:2] in MOTION_CODES and command[2].isspace():
