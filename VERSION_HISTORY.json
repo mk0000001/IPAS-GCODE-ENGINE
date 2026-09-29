@@ -1,9 +1,9 @@
 {
   "counting_rule": "Reachable non-merge commits modifying the engine package, excluding _version.py; initial import counts as revision 1. Docs, tests-only and host-app changes excluded. Not individual feature counts.",
-  "version": "0.24.0",
-  "revision_count": 24,
-  "update_count": 23,
-  "source_commit": "898b9ca9a1c3cd3ff6465b4eb9368d36af5a599f",
+  "version": "0.25.0",
+  "revision_count": 25,
+  "update_count": 24,
+  "source_commit": "8bff28c974bad5309491722164ae13e9fa2d7889",
   "commits": [
     {
       "commit": "49a29f0d366e35b8b2cc861cbea3089313d83837",
@@ -100,6 +100,10 @@
     {
       "commit": "898b9ca9a1c3cd3ff6465b4eb9368d36af5a599f",
       "subject": "Reduce redundant parsing in modal checkpoints"
+    },
+    {
+      "commit": "8bff28c974bad5309491722164ae13e9fa2d7889",
+      "subject": "H2C 온도 및 RatRig 분석 보완 / Normalize thermal metadata and RatRig parsing"
     }
   ]
 }

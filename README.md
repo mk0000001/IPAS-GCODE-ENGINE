@@ -4,7 +4,7 @@
 
 ## 한국어
 
-릴리스 **v0.24.0** · 코드 개정 24회(최초 등록 이후 업데이트 23회). [커밋 집계](VERSION_HISTORY.json).
+릴리스 **v0.25.0** · 코드 개정 25회(최초 등록 이후 업데이트 24회). [커밋 집계](VERSION_HISTORY.json).
 
 엔진 패키지를 변경한 도달 가능한 비병합 커밋을 센다. 병합된 개발 이력은 포함하고 문서 전용·시험 전용·호스트 앱 변경과 자동 생성 `_version.py`는 제외한다. 개정 수는 기능 수나 정확도 검증 횟수가 아니다. 버전 규칙은 `0.<코드 개정 수>.<릴리스 메타데이터 수정>`이며 과거 결과에 버전이 기록되지 않았다면 미상으로 남긴다.
 
@@ -37,7 +37,7 @@ python -m unittest discover -s tests
 
 ## English
 
-Release: **v0.24.0** · 24 recorded code revisions (23 updates after initial import). [Commit ledger](VERSION_HISTORY.json).
+Release: **v0.25.0** · 25 recorded code revisions (24 updates after initial import). [Commit ledger](VERSION_HISTORY.json).
 
 Count includes reachable non-merge commits touching the engine package, including merged development history; excludes documentation-only, tests-only, host-app changes and generated _version.py. It counts commits, not individual features or validated accuracy. Version convention: 0.<code revision count>.<release metadata fix>. Past results without a recorded version remain unknown.
 
