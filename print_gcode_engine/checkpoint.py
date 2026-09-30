@@ -7,13 +7,19 @@ import re
 from .scanner import COMMAND, FIELDS, LINE_NUMBER, MOTION_CODES, SETPOINT, SETTINGS, LAYER_MARKER
 
 
-def segment_checkpoints(path, workers=4, *, cancelled=None, progress=None):
+def segment_checkpoints(path, workers=4, *, cancelled=None, progress=None, on_segment=None, parts=None):
+    """Return modal ranges, optionally delivering each completed range immediately.
+
+    ``parts`` allows smaller tasks than the worker count without changing the
+    existing viewer caller's default partitioning. The callback runs synchronously
+    in the producer and may raise to stop parsing/cancel submitted work.
+    """
     with localcontext() as context:
         context.prec=50
-        return _segment_checkpoints(path,workers,cancelled,progress)
+        return _segment_checkpoints(path,workers,cancelled,progress,on_segment,parts)
 
 
-def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
+def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segment=None, parts=None):
     """Return (start, end, initial_state) for plain layer-marked G-code.
 
     The pass tracks modal state only; expensive geometry, arc tangents, and
@@ -21,6 +27,8 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
     """
     path=Path(path)
     if workers<2 or workers>8:raise ValueError('INVALID_WORKER_COUNT')
+    parts=workers if parts is None else parts
+    if not isinstance(parts,int) or parts<2 or parts>32:raise ValueError('INVALID_SEGMENT_COUNT')
     size=path.stat().st_size
     # Storage uses opaque .bin names; analyze() already dispatches by content.
     if size<1024:return None
@@ -83,11 +91,12 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
             last_absolute_motion=None
             text=binary.decode('utf-8','replace').strip()
             if text.startswith(';'):
-                if len(cuts)<workers and position>=size*len(cuts)/workers and LAYER_MARKER.match(text):
+                if len(cuts)<parts and position>=size*len(cuts)/parts and LAYER_MARKER.match(text):
+                    if on_segment:on_segment((cuts[-1],position,states[-1]))
                     cuts.append(position);states.append(snapshot())
                     # The final chunk needs its starting modal state only.
                     # Its body (including validation) is handled by the worker.
-                    if len(cuts)==workers:break
+                    if len(cuts)==parts:break
                 if LAYER_MARKER.match(text):layer_number+=1
                 lower=text.lower()
                 if 'stealthchanger' in lower and ('print_start' in lower or 'toolchanger' in lower or 'tool change' in lower):stealth_start=True
@@ -174,4 +183,5 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None):
                     last_absolute_motion=binary
     if len(cuts)<2:return None
     cuts.append(size)
+    if on_segment:on_segment((cuts[-2],size,states[-1]))
     return [(cuts[i],cuts[i+1],states[i]) for i in range(len(states))]

@@ -31,6 +31,8 @@ python -m unittest discover -s tests
 
 진행률은 약 250 ms 간격의 시간 기반 알림이다. 소비 측 콜백은 분석을 막지 않아야 한다. 잔여 시간에는 가중 표시 퍼센트 대신 `phase_bytes_processed`, `phase_total_bytes`, `eta_final_phase`를 사용하고 `eta_context`로 아카이브 멤버를 구분한다. 준비 단계나 마지막이 아닌 플레이트를 작업 전체 완료로 표시하지 않는다.
 
+체크포인트는 레이어 경계를 찾을 때마다 완료된 구간을 즉시 worker에 전달한다. 파일 전체의 사전 스캔이 끝날 때까지 worker를 기다리게 하지 않는다. 32 MiB 이상 병렬 대상은 기본적으로 worker 수의 4배 구간(최대 32개)으로 나누되, 모달 상태와 결과 병합 순서는 보존한다. 진행 알림 큐와 worker 수를 제한하며 취소·소비자 오류는 실행 중인 자식에게 전달한다. `analysis_execution`의 `chunks`와 `pipelined`는 실행 방식에 관한 정보로, 품질 점수가 아니다.
+
 관련 자료: [연구 근거](https://github.com/mk0000001/print-strength-engine/blob/master/docs/research-evidence.md), [시스템 검증 범위](https://github.com/mk0000001/print-strength-engine/blob/master/docs/system-validation.md).
 
 ---
@@ -53,6 +55,8 @@ The modal checkpoint pass defers absolute XYZ and feed conversion until a chunk 
 Optional native build (CPython with a C compiler): install `Cython==3.1.3 setuptools==80.9.0 wheel==0.45.1`, then run `python build_native.py build_ext --inplace -j 2` from this repository. Scanner, process histograms, arc geometry and checkpoint passes compile ahead of time. The `.py` files remain the portable fallback. Decimal arithmetic and analysis rules are preserved; no fast-math flags or reduced-precision coordinates are used. Compiled extensions must be rebuilt for the target Python version and platform.
 
 Adaptive parallel mode: set `GCODE_PARALLEL_WORKERS=4` to opt in for files of at least 8 MiB whose bounded sample contains substantial arc motion. A compiled scanner also enables parallel processing for dense motion files of at least 128 MiB. Smaller linear-heavy files retain the serial path. Sliced 3MF also requires a writable `GCODE_SCRATCH_DIR` with room for its uncompressed G-code; the temporary member is removed afterward. Files without sufficient layer markers fall back to serial scanning. Default is serial. Speed varies by workload; benchmark before enabling. Chunk results are combined with time-weighted histograms, modal checkpoints and ordered metadata. This is not an 80% CPU utilization guarantee.
+
+The checkpoint pass submits each completed layer-aligned segment immediately, so workers can run before the entire prepass finishes. Eligible parallel files of at least 32 MiB default to four segments per worker, capped at 32 segments, while modal state and ordered result merging are retained. Worker count and progress queues are bounded; cancellation and consumer failures signal active children. The `chunks` and `pipelined` fields in `analysis_execution` describe execution, not analysis quality.
 
 Progress is time-based (approximately 250 ms from the scanner/checkpoint loop), independent of crossing a byte threshold. Progress consumers should avoid blocking the analyzer; final completion always reports the full byte count.
 
