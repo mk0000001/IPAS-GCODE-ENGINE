@@ -1,9 +1,9 @@
 {
   "counting_rule": "Reachable non-merge commits modifying the engine package, excluding _version.py; initial import counts as revision 1. Docs, tests-only and host-app changes excluded. Not individual feature counts.",
-  "version": "0.25.0",
-  "revision_count": 25,
-  "update_count": 24,
-  "source_commit": "8bff28c974bad5309491722164ae13e9fa2d7889",
+  "version": "0.26.0",
+  "revision_count": 26,
+  "update_count": 25,
+  "source_commit": "6267e04bbe10d9152f9eda74474cf0f863ebb2ff",
   "commits": [
     {
       "commit": "49a29f0d366e35b8b2cc861cbea3089313d83837",
@@ -104,6 +104,10 @@
     {
       "commit": "8bff28c974bad5309491722164ae13e9fa2d7889",
       "subject": "H2C 온도 및 RatRig 분석 보완 / Normalize thermal metadata and RatRig parsing"
+    },
+    {
+      "commit": "6267e04bbe10d9152f9eda74474cf0f863ebb2ff",
+      "subject": "구간 준비와 분석을 중첩해 스캔 가속 / Pipeline checkpoints with bounded parallel analysis"
     }
   ]
 }
