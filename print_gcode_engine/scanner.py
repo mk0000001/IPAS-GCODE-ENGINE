@@ -7,6 +7,7 @@ from decimal import Decimal, localcontext
 from pathlib import Path
 from .arcs import arc_metrics
 from .process import ProcessMetrics
+from .motion_context import MotionContext, indexed_temperature
 
 D=Decimal
 ZERO=D(0)
@@ -58,7 +59,7 @@ def analyze(path,progress=None,cancelled=None):
         ctx.prec=50
         with path.open('rb') as stream: return scan(stream,path.stat().st_size,progress,cancelled)
 
-def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_internal=False,motion_callback=None):
+def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_internal=False,motion_callback=None,motion_context_callback=None):
     xyz={a:D(0) for a in 'XYZ'}; offset={a:D(0) for a in 'XYZ'}; bounds={a:[None,None] for a in 'XYZ'}
     epos={0:D(0)}; used={}; retract={}; tools=set(); tool=0; last_tool=None; changes=0; ignored=0
     absolute_xyz=True;absolute_e=True;scale=D(1);lines=0;layers=0;header_layers=None;max_z=None
@@ -76,6 +77,10 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
     last_absolute_motion=None
     cached_z=None;cached_level=None
     line_width=None;layer_height=None
+    context_state=MotionContext((initial_state or {}).get('motion_context')) if motion_context_callback is not None else None
+    if context_state is not None and initial_state and not initial_state.get('motion_context'):
+        context_state.gaps.add('INITIAL_MOTION_CONTEXT_UNAVAILABLE')
+        context_state.speed=None;context_state.volumetric=None
     if initial_state:
         line_width=initial_state.get('line_width');layer_height=initial_state.get('layer_height')
         layer_number=initial_state.get('layer_number',0)
@@ -143,7 +148,12 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
                 for prefixes,name in ((('; LINE_WIDTH:',';WIDTH:'),'width'),(('; LAYER_HEIGHT:',';HEIGHT:'),'height')):
                     if not head.startswith(prefixes):continue
                     try:value=float(head.split(':',1)[1])
-                    except (ValueError,IndexError):break
+                    except (ValueError,IndexError):value=None
+                    if context_state is not None:
+                        value=context_state.dimension(name,value)
+                        if name=='width':line_width=value
+                        else:layer_height=value
+                    if value is None:break
                     if .02<=value<=5:
                         if name=='width':line_width=value
                         else:layer_height=value
@@ -157,7 +167,8 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             continue
         command=text.split(';',1)[0].strip().upper()
         if command.startswith('N'):command=LINE_NUMBER.sub('',command)
-        if command.startswith('START_PRINT '):
+        if command=='START_PRINT' or command.startswith('START_PRINT '):
+            if context_state is not None:context_state.macro()
             bed=re.search(r'(?:^|\s)BED_TEMP=([0-9]+(?:\.[0-9]+)?)(?=\s|$)',command)
             if bed and 0<=float(bed[1])<=150:
                 process.setpoint('bed',float(bed[1]))
@@ -169,8 +180,12 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             code=command[:2]
         else:
             match=COMMAND.match(command)
-            if not match:continue
+            if not match:
+                if context_state is not None and command and command[0].isalpha():context_state.macro()
+                continue
             code=match[1]
+        if context_state is not None and code not in MOTION_CODES:
+            context_state.command(code,command,tool,retract,scale)
         if code=='G90':absolute_xyz=True
         elif code=='G91':absolute_xyz=False
         elif code=='M82':absolute_e=True
@@ -184,10 +199,19 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             value=SETPOINT.search(command)
             if value:
                 component='nozzle' if code in ('M104','M109') else 'bed' if code in ('M140','M190') else 'chamber'
+                prior=getattr(process,component)['last']
                 process.setpoint(component,float(value[1]))
+                if component=='nozzle' and indexed_temperature(command):
+                    # Heater indices are not logical material-tool indices.
+                    process.nozzle['last']=prior
+                    if 'INDEXED_NOZZLE_HEATER_MAPPING_UNVERIFIED' not in warnings:warnings.append('INDEXED_NOZZLE_HEATER_MAPPING_UNVERIFIED')
         elif code.startswith('T'):
             key=int(code[1:])
             if key>=255:ignored+=1;continue
+            if key!=tool:
+                process.nozzle['last']=None
+                if context_state is not None:context_state.tool_changed()
+                if 'NOZZLE_TOOL_HEATER_MAPPING_UNVERIFIED' not in warnings:warnings.append('NOZZLE_TOOL_HEATER_MAPPING_UNVERIFIED')
             if last_tool is not None and key!=last_tool:changes+=1
             last_tool=key;tool=key;tools.add(key);epos.setdefault(key,D(0))
         elif code=='G92':
@@ -213,7 +237,7 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             arc=None
             if code in ('G2','G3'):
                 try:
-                    arc=arc_metrics(before,xyz,fields,code=='G2',plane,scale,absolute_center,offset,include_geometry=motion_callback is not None)
+                    arc=arc_metrics(before,xyz,fields,code=='G2',plane,scale,absolute_center,offset,include_geometry=motion_callback is not None or motion_context_callback is not None)
                     arc_count+=1
                 except ValueError:
                     arc_excluded+=1
@@ -224,6 +248,11 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             has_path=arc is not None or (code in ('G0','G1') and xyz!=before)
             if motion_callback is not None and has_path:
                 motion_callback(layer_number,before,xyz,feature_name,tool,deposited,arc)
+            if context_state is not None:
+                if has_path:
+                    context=context_state.observe(deposited,tool,process.feed,process.diameters,line_width,layer_height,scale)
+                    motion_context_callback(layer_number,before,xyz,feature_name,tool,deposited,arc,context)
+                context_state.recovered(tool,retract)
             if deposited>0 and has_path and feature_name not in ('custom','prime tower','wipe tower'):
                 if not support_feature and not auxiliary_feature and xyz['Z']>=0:
                     if xyz['Z']!=cached_z:
@@ -365,4 +394,5 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
             'used':used.copy(),'seen_tools':tuple(sorted(tools)),
             'risk_lengths':(support_road_length,bridge_road_length,overhang_road_length,brim_road_length),
             'first_model_z':first_model_z,'first_model_bounds':first_model_bounds.copy()}
+        if context_state is not None:result['_scan_state']['motion_context']=context_state.snapshot()
     return result

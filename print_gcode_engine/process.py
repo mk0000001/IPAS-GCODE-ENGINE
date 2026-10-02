@@ -57,6 +57,7 @@ class ProcessMetrics:
         speed=self.feed/60;duration=length/speed
         self.length+=length;self.seconds+=duration;self.speeds.add(speed,duration)
         if self.nozzle['last'] is not None:update_range(self.deposition_nozzle,self.nozzle['last'])
+        else:self.deposition_nozzle['last']=None
         if 0<=tool<len(self.diameters):
             diameter=self.diameters[tool]
             if diameter>0:self.flows.add(extruded_mm*math.pi*(diameter/2)**2/duration,duration)
@@ -68,8 +69,11 @@ class ProcessMetrics:
             'speed_basis':'COMMANDED_FEEDRATE_NOT_MEASURED','duration_basis':'PATH_LENGTH_OVER_FEEDRATE_EXCLUDES_ACCELERATION',
             'material_volume_basis':'POSITIVE_EXTRUSION_AFTER_RETRACTION_RECOVERY_WITH_CONFIGURED_DIAMETER'}
     def snapshot(self):
-        return {'ranges':{name:getattr(self,name).copy() for name in ('nozzle','bed','chamber','deposition_nozzle')},
-            'speeds':self.speeds.snapshot(),'flows':self.flows.snapshot(),'length':self.length,'seconds':self.seconds}
+        snapshot={'ranges':{name:getattr(self,name).copy() for name in ('nozzle','bed','chamber','deposition_nozzle')},
+            'speeds':self.speeds.snapshot(),'flows':self.flows.snapshot(),'length':self.length,'seconds':self.seconds,
+            'active_nozzle_last':self.nozzle['last']}
+        if self.length>0:snapshot['deposition_nozzle_last']=self.deposition_nozzle['last']
+        return snapshot
     def merge(self,snapshot):
         """Merge chunks in source order; never average per-chunk quantiles."""
         self.speeds.merge(snapshot['speeds']);self.flows.merge(snapshot['flows'])
@@ -80,3 +84,7 @@ class ProcessMetrics:
             if incoming['min'] is not None:current['min']=incoming['min'] if current['min'] is None else min(current['min'],incoming['min'])
             if incoming['max'] is not None:current['max']=incoming['max'] if current['max'] is None else max(current['max'],incoming['max'])
             if incoming['last'] is not None:current['last']=incoming['last']
+        # An explicit unknown after a logical-tool change is a real modal value.
+        # Earlier chunks must not resurrect their unbound active heater command.
+        if 'active_nozzle_last' in snapshot:self.nozzle['last']=snapshot['active_nozzle_last']
+        if 'deposition_nozzle_last' in snapshot:self.deposition_nozzle['last']=snapshot['deposition_nozzle_last']

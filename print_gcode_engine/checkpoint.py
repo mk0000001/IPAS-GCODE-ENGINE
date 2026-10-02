@@ -5,9 +5,10 @@ import time
 import re
 
 from .scanner import COMMAND, FIELDS, LINE_NUMBER, MOTION_CODES, SETPOINT, SETTINGS, LAYER_MARKER
+from .motion_context import MotionContext, indexed_temperature
 
 
-def segment_checkpoints(path, workers=4, *, cancelled=None, progress=None, on_segment=None, parts=None):
+def segment_checkpoints(path, workers=4, *, cancelled=None, progress=None, on_segment=None, parts=None,motion_context=False):
     """Return modal ranges, optionally delivering each completed range immediately.
 
     ``parts`` allows smaller tasks than the worker count without changing the
@@ -16,10 +17,10 @@ def segment_checkpoints(path, workers=4, *, cancelled=None, progress=None, on_se
     """
     with localcontext() as context:
         context.prec=50
-        return _segment_checkpoints(path,workers,cancelled,progress,on_segment,parts)
+        return _segment_checkpoints(path,workers,cancelled,progress,on_segment,parts,motion_context)
 
 
-def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segment=None, parts=None):
+def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segment=None, parts=None,motion_context=False):
     """Return (start, end, initial_state) for plain layer-marked G-code.
 
     The pass tracks modal state only; expensive geometry, arc tangents, and
@@ -48,6 +49,7 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
     last_e_text=None;last_e_number=zero
     last_absolute_motion=None
     line_width=None;layer_height=None
+    context_state=MotionContext() if motion_context else None
     cuts=[0];states=[]
     lines=0;next_check=0;layer_number=0
 
@@ -62,13 +64,15 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
 
     def snapshot():
         flush_pending()
-        return {'xyz':xyz.copy(),'offset':offset.copy(),'epos':epos.copy(),
+        result={'xyz':xyz.copy(),'offset':offset.copy(),'epos':epos.copy(),
             'retract':retract.copy(),'tool':tool,'last_tool':last_tool,
             'absolute_xyz':absolute_xyz,'absolute_e':absolute_e,'scale':scale,
             'plane':plane,'absolute_center':absolute_center,'config':config.copy(),
             'feature':feature,'stealth_start':stealth_start,'feed':feed,
             'diameters':list(diameters),'setpoints':setpoints.copy(),'layer_number':layer_number,
             'line_width':line_width,'layer_height':layer_height}
+        if context_state is not None:result['motion_context']=context_state.snapshot()
+        return result
 
     states.append(snapshot())
     next_position=0
@@ -107,7 +111,12 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                     for prefixes,name in ((('; LINE_WIDTH:',';WIDTH:'),'width'),(('; LAYER_HEIGHT:',';HEIGHT:'),'height')):
                         if not head.startswith(prefixes):continue
                         try:value=float(head.split(':',1)[1])
-                        except (ValueError,IndexError):break
+                        except (ValueError,IndexError):value=None
+                        if context_state is not None:
+                            value=context_state.dimension(name,value)
+                            if name=='width':line_width=value
+                            else:layer_height=value
+                        if value is None:break
                         if .02<=value<=5:
                             if name=='width':line_width=value
                             else:layer_height=value
@@ -121,7 +130,8 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                 continue
             command=text.split(';',1)[0].strip().upper()
             if command.startswith('N'):command=LINE_NUMBER.sub('',command)
-            if command.startswith('START_PRINT '):
+            if command=='START_PRINT' or command.startswith('START_PRINT '):
+                if context_state is not None:context_state.macro()
                 bed=re.search(r'(?:^|\s)BED_TEMP=([0-9]+(?:\.[0-9]+)?)(?=\s|$)',command)
                 if bed and 0<=float(bed[1])<=150:
                     setpoints['bed']=float(bed[1]);config['bed_temperature']=bed[1]
@@ -132,8 +142,12 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                 code=command[:2]
             else:
                 match=COMMAND.match(command)
-                if not match:continue
+                if not match:
+                    if context_state is not None and command and command[0].isalpha():context_state.macro()
+                    continue
                 code=match[1]
+            if context_state is not None and code not in MOTION_CODES:
+                context_state.command(code,command,tool,retract,scale)
             if code=='G90':absolute_xyz=True
             elif code=='G91':flush_pending();absolute_xyz=False
             elif code=='M82':absolute_e=True
@@ -147,10 +161,13 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                 value=SETPOINT.search(command)
                 if value:
                     component='nozzle' if code in ('M104','M109') else 'bed' if code in ('M140','M190') else 'chamber'
-                    setpoints[component]=float(value[1])
+                    if component!='nozzle' or not indexed_temperature(command):setpoints[component]=float(value[1])
             elif code.startswith('T'):
                 key=int(code[1:])
                 if key>=255:continue
+                if key!=tool:
+                    setpoints['nozzle']=None
+                    if context_state is not None:context_state.tool_changed()
                 last_tool=key;tool=key;epos.setdefault(key,zero)
             elif code=='G92':
                 flush_pending()
@@ -175,6 +192,7 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                         debt=retract.get(tool,zero)
                         retract[tool]=debt-min(debt,delta) if debt else debt
                         if last_tool is None:last_tool=tool
+                if context_state is not None:context_state.recovered(tool,retract)
                 for axis in 'XYZ':
                     if axis in fields:
                         if absolute_xyz:pending_xyz[axis]=fields[axis]

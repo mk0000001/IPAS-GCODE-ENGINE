@@ -18,6 +18,7 @@
 - 절대 좌표의 불필요한 중간 변환을 지연하고, 동일 조건의 연속 절대 G0/G1·일반 공백 구분 명령·직전 압출 문자열을 최적화한다. 축약 명령과 서브코드는 기존 정규식 경로를 유지한다. 정밀도 축소나 fast-math는 사용하지 않는다.
 - 유량 배율, 상하단 셸, 최소 레이어 시간, 냉각 설정은 파일에 기록된 설정값이다. 실제 공극률·접합면적·국소 열이력 측정값이 아니다.
 - `scan(..., motion_callback=callback)`은 분석기와 같은 모달 상태를 사용하는 시각화 이동을 전달한다. 콜백 이후 좌표를 보관하려면 복사해야 한다. 정지 상태의 리트랙션 복구는 모델 면적을 만들지 않는다.
+- 선택적 `motion_context_callback`은 원본 이동마다 E 단위·명령 체적·온도·팬·속도·유량 배율·선폭·층높이와 불확실성을 불변 상태로 전달한다. 강도 배율이나 실측값이 아니다. [콜백 계약](docs/commanded-motion-context.md).
 
 ### 실행과 병렬 처리
 
@@ -51,6 +52,8 @@ Strength-context parsing retains filament flow/extrusion multipliers, top/bottom
 The modal checkpoint pass defers absolute XYZ and feed conversion until a chunk boundary or a relative-coordinate, origin-reset, or unit-change command needs numeric state. Superseded absolute positions are not repeatedly converted. Decimal50 state precision, relative movement, unit scaling, tool state and retraction debt remain exact; there is no reduced-precision fast path. Checkpoint states are regression-tested against complete prefix scans for 2/4/6 partitions.
 
 `scan(..., motion_callback=callback)` optionally streams visual motions as `(layer_number, before_xyz, after_xyz, feature, tool, deposited_mm, arc)`. The callback shares the analyzer's modal coordinates and retraction accounting; copy coordinates if retaining them beyond the call. Arc geometry is included only for observers. Stationary unretraction does not create a model-layer area entry, including tiny residual extrusion before a support feature change.
+
+Optional `motion_context_callback` preserves that callback and adds an immutable per-original-motion observation of E units, commanded volume, temperatures, fan, speed/flow overrides, declared dimensions and explicit interpretation gaps. It does not measure deposition or apply strength multipliers. See the [context contract](docs/commanded-motion-context.md).
 
 Optional native build (CPython with a C compiler): install `Cython==3.1.3 setuptools==80.9.0 wheel==0.45.1`, then run `python build_native.py build_ext --inplace -j 2` from this repository. Scanner, process histograms, arc geometry and checkpoint passes compile ahead of time. The `.py` files remain the portable fallback. Decimal arithmetic and analysis rules are preserved; no fast-math flags or reduced-precision coordinates are used. Compiled extensions must be rebuilt for the target Python version and platform.
 
