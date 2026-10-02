@@ -1,9 +1,9 @@
 {
   "counting_rule": "Reachable non-merge commits modifying the engine package, excluding _version.py; initial import counts as revision 1. Docs, tests-only and host-app changes excluded. Not individual feature counts.",
-  "version": "0.26.0",
-  "revision_count": 26,
-  "update_count": 25,
-  "source_commit": "6267e04bbe10d9152f9eda74474cf0f863ebb2ff",
+  "version": "0.27.0",
+  "revision_count": 27,
+  "update_count": 26,
+  "source_commit": "5e7df32eb7870a7947efcf3f20dc42b35edd7133",
   "commits": [
     {
       "commit": "49a29f0d366e35b8b2cc861cbea3089313d83837",
@@ -108,6 +108,10 @@
     {
       "commit": "6267e04bbe10d9152f9eda74474cf0f863ebb2ff",
       "subject": "구간 준비와 분석을 중첩해 스캔 가속 / Pipeline checkpoints with bounded parallel analysis"
+    },
+    {
+      "commit": "5e7df32eb7870a7947efcf3f20dc42b35edd7133",
+      "subject": "fix: preserve commanded process context and heater targeting across scans"
     }
   ]
 }

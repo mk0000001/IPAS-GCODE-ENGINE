@@ -6,6 +6,8 @@
 
 명령 온도·속도는 실제 접합 온도·가속을 포함한 실속도가 아닙니다. 체적이 확인되지 않으면 `None`으로 남깁니다. 곡선은 원본 한 번의 콜백으로 전달하며 순차/체크포인트 상태를 유지합니다. 기본 스캔에서는 선택적 수집을 하지 않으므로 새 문맥 생성 비용을 발생시키지 않습니다.
 
+2026-10-03 릴리스 **v0.27.0**: 코드 소스 `5e7df32eb7870a7947efcf3f20dc42b35edd7133`. 실제 배포 이미지에서 네이티브 스캐너를 사용한 공개 시험 65개 모두 통과했습니다. 강도 v0.19.0과 통합 앱 v0.5.14-process-context에 연결해 4개 운영 서비스의 이미지·소스·버전을 확인했습니다. [통합 검증 및 실증 한계](https://github.com/mk0000001/print-strength-engine/blob/master/docs/process-aware-weakness-validation-20261003.md).
+
 ## English
 
 `scan(..., motion_context_callback=callback)` optionally emits one observed context for each original motion with a valid path. Pure stationary E/retraction moves update modal state but do not emit a path. It works alongside the unchanged seven-argument `motion_callback`.
@@ -54,3 +56,5 @@ For layer-aligned context scans call `segment_checkpoints(..., motion_context=Tr
 Diameter comments that appear only after motion are not retroactively treated as observed earlier in time. A host may seed same-source verified configuration before scanning or resolve a bounded aggregate after finalization, with its provenance retained. No extra source scan is performed by this API.
 
 Focused synthetic regressions cover compatibility, immutability, unindexed/indexed temperature separation, unknown last preservation, M200/M220/M221 semantics, fan ids/variants, invalid values, explicit recovery, uncertain recovery, optional checkpoint parity and full-circle arcs. Run `python -m unittest discover -s tests`.
+
+Release **v0.27.0**, 2026-10-03, source `5e7df32eb7870a7947efcf3f20dc42b35edd7133`: all 65 public tests passed with the production native scanner. Integration with strength v0.19.0 and host v0.5.14-process-context was deployed and source/image/version identity checked across four services. See the [integration receipts and empirical limits](https://github.com/mk0000001/print-strength-engine/blob/master/docs/process-aware-weakness-validation-20261003.md).
