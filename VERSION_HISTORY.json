@@ -1,9 +1,9 @@
 {
   "counting_rule": "Reachable non-merge commits modifying the engine package, excluding _version.py; initial import counts as revision 1. Docs, tests-only and host-app changes excluded. Not individual feature counts.",
-  "version": "0.27.0",
-  "revision_count": 27,
-  "update_count": 26,
-  "source_commit": "5e7df32eb7870a7947efcf3f20dc42b35edd7133",
+  "version": "0.28.0",
+  "revision_count": 28,
+  "update_count": 27,
+  "source_commit": "3f687351f8953182f58010f2e17aa685c9632e56",
   "commits": [
     {
       "commit": "49a29f0d366e35b8b2cc861cbea3089313d83837",
@@ -112,6 +112,10 @@
     {
       "commit": "5e7df32eb7870a7947efcf3f20dc42b35edd7133",
       "subject": "fix: preserve commanded process context and heater targeting across scans"
+    },
+    {
+      "commit": "3f687351f8953182f58010f2e17aa685c9632e56",
+      "subject": "Preserve declared thin heights and exclude exact Cura prime tower roads"
     }
   ]
 }
