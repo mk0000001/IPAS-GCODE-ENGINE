@@ -57,7 +57,7 @@ class MotionContext:
         self.nozzle = None; self.nozzle_mapping_unknown = True
 
     def dimension(self, name, value):
-        valid = finite(value, .02, 5)
+        valid = finite(value, .001 if name == 'height' else .02, 5)
         if valid is None: self.invalid_dimensions.add(name)
         else: self.invalid_dimensions.discard(name)
         return valid
@@ -148,7 +148,7 @@ class MotionContext:
 
     def observe(self, deposited, tool, feed, diameters, width, height, scale=1):
         gaps = set(self.gaps)
-        width=finite(width,.02,5);height=finite(height,.02,5)
+        width=finite(width,.02,5);height=finite(height,.001,5)
         if width is None or height is None:gaps.add('DECLARED_ROAD_DIMENSIONS_UNKNOWN')
         default_flow = None if gaps.intersection(('INITIAL_MOTION_CONTEXT_UNAVAILABLE','FIRMWARE_MACRO_UNRESOLVED')) else 100.
         flow = finite(self.flows.get(tool, default_flow), 0, 1000)

@@ -117,7 +117,7 @@ def _segment_checkpoints(path, workers=4, cancelled=None, progress=None, on_segm
                             if name=='width':line_width=value
                             else:layer_height=value
                         if value is None:break
-                        if .02<=value<=5:
+                        if (.001 if name=='height' else .02)<=value<=5:
                             if name=='width':line_width=value
                             else:layer_height=value
                         break

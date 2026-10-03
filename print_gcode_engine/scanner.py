@@ -154,7 +154,7 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
                         if name=='width':line_width=value
                         else:layer_height=value
                     if value is None:break
-                    if .02<=value<=5:
+                    if (.001 if name=='height' else .02)<=value<=5:
                         if name=='width':line_width=value
                         else:layer_height=value
                     break
@@ -253,7 +253,7 @@ def scan(raw,total,progress=None,cancelled=None,*,initial_state=None,include_int
                     context=context_state.observe(deposited,tool,process.feed,process.diameters,line_width,layer_height,scale)
                     motion_context_callback(layer_number,before,xyz,feature_name,tool,deposited,arc,context)
                 context_state.recovered(tool,retract)
-            if deposited>0 and has_path and feature_name not in ('custom','prime tower','wipe tower'):
+            if deposited>0 and has_path and feature_name not in ('custom','prime tower','prime-tower','wipe tower'):
                 if not support_feature and not auxiliary_feature and xyz['Z']>=0:
                     if xyz['Z']!=cached_z:
                         cached_z=xyz['Z'];cached_level=round(float(cached_z),3)
