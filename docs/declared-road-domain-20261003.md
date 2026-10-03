@@ -10,6 +10,8 @@
 
 공개 Python 시험 70개가 통과했습니다. 새 회귀 시험 5개는 양의 미세 높이 문맥, 비정상 치수, 기본 분석과 observer 분석의 일치, 체크포인트 재개와 prime-tower 제외를 확인합니다. 네이티브 바이너리는 변경된 소스로 다시 빌드해야 합니다. 과거 raw 캐시는 선택 원본의 전체 바이트·SHA와 영향받는 feature 표기를 감사한 뒤에만 재사용할 수 있습니다.
 
+릴리스 **v0.28.0**의 같은 70개 시험은 새 Windows 네이티브 빌드와 실제 운영 Linux 이미지의 네이티브 모듈에서도 통과했습니다. 운영 호스트 `0.5.18-corpus-thin-road`와 강도 `0.22.0`은 네 개 서비스의 이미지·소스 해시·버전·네이티브 로딩을 확인했습니다. 원본 자료의 전체 계산 여부는 [통합 검증 기록](https://github.com/mk0000001/print-strength-engine/blob/master/docs/full-corpus-validation-20261003.md)의 별도 대조 결과로 판단합니다. 소프트웨어 시험은 실제 파단하중 검증이 아닙니다.
+
 ## English
 
 A completed subset of the source corpus exposed explicit heights of 0.0045–0.0157995 mm lost at the previous 0.02 mm context floor. Twelve separately replayed real sources reproduced that loss for declared ironing heights of 0.0045/0.0075 mm. These are slicer declarations, not measured bead or weld dimensions. This finding does not establish completion of the whole corpus.
@@ -19,3 +21,5 @@ Context, sequential fallback and checkpoint fallback retain heights in 0.001–5
 The exact Cura `PRIME-TOWER` alias is excluded from model deposition accounting alongside `prime tower`. Filament consumption and source motion callbacks remain available. No blanket normalization of similar feature names is applied.
 
 All 70 public Python tests passed. Five new regressions cover positive thin declarations, invalid dimensions, observer/default result parity, resumed checkpoints and auxiliary-tower exclusion. Native extensions require rebuilding. Reusing older raw results requires whole-stream byte/SHA verification and source-feature impact checks.
+
+The same 70 tests for release **v0.28.0** passed on the rebuilt Windows native modules and the actual production Linux image. Host `0.5.18-corpus-thin-road` and strength `0.22.0` were checked across four services for image, source hashes, version and native loading. Whole-corpus calculation coverage is reconciled separately in the [integrated validation record](https://github.com/mk0000001/print-strength-engine/blob/master/docs/full-corpus-validation-20261003.md). These software tests do not validate physical failure loads.

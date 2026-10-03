@@ -36,6 +36,8 @@ python -m unittest discover -s tests
 
 관련 자료: [연구 근거](https://github.com/mk0000001/print-strength-engine/blob/master/docs/research-evidence.md), [시스템 검증 범위](https://github.com/mk0000001/print-strength-engine/blob/master/docs/system-validation.md).
 
+v0.28의 선언 높이·Cura 보조 경로 수정과 네이티브 검증은 [릴리스 근거](docs/declared-road-domain-20261003.md)에 정리했습니다.
+
 ---
 
 ## English
@@ -74,3 +76,5 @@ H2C sliced-3MF analysis uses the selected executable plate and active filament X
 Optional native Cython compilation and layer-aligned multiprocessing preserve modal state (including geometry width and height), tool/retraction state and ordered results. Parallelism is enabled selectively because checkpoint overhead can outweigh gains on smaller files. Trailing filament diameter settings are reconciled into deposited-volume profiles.
 
 Run `python -m unittest discover -s tests`. `build_native.py` optionally compiles the scanner and related modules with Cython; the same suite can be run against the compiled package.
+
+The v0.28 declared-height and Cura auxiliary-role fixes, including native release checks, are documented in [release evidence](docs/declared-road-domain-20261003.md).
