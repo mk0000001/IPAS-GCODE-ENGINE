@@ -1,8 +1,15 @@
-# Print G-code Engine
+# IPAS-GCODE ENGINE
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="branding/ipas/ipas-logo-light.svg">
+  <img src="branding/ipas/ipas-logo.svg" alt="IPAS · Integrated Printing Analysis System">
+</picture>
 
 [한국어](#한국어) · [English](#english)
 
 ## 한국어
+
+**IPAS-GCODE ENGINE**은 **IPAS / Integrated Printing Analysis System**의 G-code·슬라이스 3MF 분석 엔진이다. 통합 시스템은 [IPAS-STRENGTH ENGINE](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE), [IPAS-GCODE ENGINE](https://github.com/mk0000001/IPAS-GCODE-ENGINE), [IPAS-QUOTE ENGINE](https://github.com/mk0000001/IPAS-QUOTE-ENGINE)을 연결한다. Python 패키지 이름 `print_gcode_engine`은 기존 연동 호환성을 위해 유지한다.
 
 릴리스 **v0.28.0** · 코드 개정 28회(최초 등록 이후 업데이트 27회). [커밋 집계](VERSION_HISTORY.json).
 
@@ -34,13 +41,15 @@ python -m unittest discover -s tests
 
 체크포인트는 레이어 경계를 찾을 때마다 완료된 구간을 즉시 worker에 전달한다. 파일 전체의 사전 스캔이 끝날 때까지 worker를 기다리게 하지 않는다. 32 MiB 이상 병렬 대상은 기본적으로 worker 수의 4배 구간(최대 32개)으로 나누되, 모달 상태와 결과 병합 순서는 보존한다. 진행 알림 큐와 worker 수를 제한하며 취소·소비자 오류는 실행 중인 자식에게 전달한다. `analysis_execution`의 `chunks`와 `pipelined`는 실행 방식에 관한 정보로, 품질 점수가 아니다.
 
-관련 자료: [연구 근거](https://github.com/mk0000001/print-strength-engine/blob/master/docs/research-evidence.md), [시스템 검증 범위](https://github.com/mk0000001/print-strength-engine/blob/master/docs/system-validation.md).
+관련 자료: [연구 근거](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE/blob/master/docs/research-evidence.md), [시스템 검증 범위](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE/blob/master/docs/system-validation.md).
 
 v0.28의 선언 높이·Cura 보조 경로 수정과 네이티브 검증은 [릴리스 근거](docs/declared-road-domain-20261003.md)에 정리했습니다.
 
 ---
 
 ## English
+
+**IPAS-GCODE ENGINE** is the G-code and sliced-3MF analysis engine of **IPAS / Integrated Printing Analysis System**. The integrated system connects [IPAS-STRENGTH ENGINE](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE), [IPAS-GCODE ENGINE](https://github.com/mk0000001/IPAS-GCODE-ENGINE), and [IPAS-QUOTE ENGINE](https://github.com/mk0000001/IPAS-QUOTE-ENGINE). The Python package name `print_gcode_engine` is retained for compatibility with existing integrations.
 
 Release: **v0.28.0** · 28 recorded code revisions (27 updates after initial import). [Commit ledger](VERSION_HISTORY.json).
 
