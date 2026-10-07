@@ -9,6 +9,8 @@
 
 ## 한국어
 
+최신 호스트 릴리스: [IPAS v0.5.26 프로필 자동 선택·가격 근거 보존](https://github.com/mk0000001/IPAS-QUOTE-ENGINE/blob/master/docs/ipas-profile-autoselect-20261008.md). G-code 수치 엔진 v0.28.0을 유지합니다.
+
 **IPAS-GCODE ENGINE**은 **IPAS / Integrated Printing Analysis System**의 G-code·슬라이스 3MF 분석 엔진이다. 통합 시스템은 [IPAS-STRENGTH ENGINE](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE), [IPAS-GCODE ENGINE](https://github.com/mk0000001/IPAS-GCODE-ENGINE), [IPAS-QUOTE ENGINE](https://github.com/mk0000001/IPAS-QUOTE-ENGINE)을 연결한다. Python 패키지 이름 `print_gcode_engine`은 기존 연동 호환성을 위해 유지한다.
 
 릴리스 **v0.28.0** · 코드 개정 28회(최초 등록 이후 업데이트 27회). [커밋 집계](VERSION_HISTORY.json).
@@ -48,6 +50,8 @@ v0.28의 선언 높이·Cura 보조 경로 수정과 네이티브 검증은 [릴
 ---
 
 ## English
+
+Latest host release: [IPAS v0.5.26 profile auto-selection and price provenance](https://github.com/mk0000001/IPAS-QUOTE-ENGINE/blob/master/docs/ipas-profile-autoselect-20261008.md). The G-code numerical engine remains v0.28.0.
 
 **IPAS-GCODE ENGINE** is the G-code and sliced-3MF analysis engine of **IPAS / Integrated Printing Analysis System**. The integrated system connects [IPAS-STRENGTH ENGINE](https://github.com/mk0000001/IPAS-STRENGTH-ENGINE), [IPAS-GCODE ENGINE](https://github.com/mk0000001/IPAS-GCODE-ENGINE), and [IPAS-QUOTE ENGINE](https://github.com/mk0000001/IPAS-QUOTE-ENGINE). The Python package name `print_gcode_engine` is retained for compatibility with existing integrations.
 
